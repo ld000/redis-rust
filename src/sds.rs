@@ -15,13 +15,14 @@ pub struct sdshdr8 {
     len: u8, // 1
     alloc: u8, // 1
     flags: u8, // 4
-    buf: Vec<u8>,
+    // TODO dynamic length array https://stackoverflow.com/questions/34684261/how-to-set-a-rust-array-length-dynamically
+    pub buf: Vec<u8>,
 }
 
 impl sdshdr8 {
     pub fn new(len: u8, alloc: u8, init: &str) -> sdshdr8 {
         let mut buf: Vec<u8> = Vec::with_capacity(alloc as usize);
-        buf.starts_with(init.as_bytes());
+        buf.append(init.as_bytes().to_owned().as_mut());
         sdshdr8{ len, alloc, flags: SDS_TYPE_8, buf }
     }
 }
