@@ -1,4 +1,5 @@
-use std::mem;
+use std::{mem, ptr};
+use std::alloc::{alloc, Layout};
 
 pub type sds = Vec<u8>;
 
@@ -8,21 +9,33 @@ const SDS_TYPE_16: u8 = 2;
 const SDS_TYPE_32: u8 = 3;
 const SDS_TYPE_64: u8 = 4;
 
+fn alloc_buf(len: usize) -> *mut u8 {
+    let ptr = unsafe {
+        let layout = Layout::from_size_align_unchecked(len, std::mem::size_of::<u8>());
+        alloc(layout) as *mut u8
+    };
+    return ptr;
+}
+
+fn ptr_copy(src: &str, buf: *mut u8, len: usize) {
+    unsafe { ptr::copy_nonoverlapping(src.as_ptr(), buf, len); }
+}
+
 pub trait hdr {}
 
 #[repr(C, packed)]
 pub struct sdshdr8 {
-    len: u8, // 1
+    pub len: u8, // 1
     alloc: u8, // 1
-    flags: u8, // 4
+    flags: u8,
     // TODO dynamic length array https://stackoverflow.com/questions/34684261/how-to-set-a-rust-array-length-dynamically
-    pub buf: Vec<u8>,
+    pub buf: *mut u8,
 }
 
 impl sdshdr8 {
     pub fn new(len: u8, alloc: u8, init: &str) -> sdshdr8 {
-        let mut buf: Vec<u8> = Vec::with_capacity(alloc as usize);
-        buf.append(init.as_bytes().to_owned().as_mut());
+        let mut buf = alloc_buf(alloc as usize);
+        ptr_copy(init, buf, len as usize);
         sdshdr8{ len, alloc, flags: SDS_TYPE_8, buf }
     }
 }
@@ -34,13 +47,13 @@ pub struct sdshdr16 {
     len: u16, // 2
     alloc: u16, // 2
     flags: u8, // 4
-    buf: Vec<u8>,
+    buf: *mut u8,
 }
 
 impl sdshdr16 {
     pub fn new(len: u16, alloc: u16, init: &str) -> sdshdr16 {
-        let mut buf: Vec<u8> = Vec::with_capacity(alloc as usize);
-        buf.starts_with(init.as_bytes());
+        let mut buf = alloc_buf(alloc as usize);
+        ptr_copy(init, buf, len as usize);
         sdshdr16{ len, alloc, flags: SDS_TYPE_16, buf }
     }
 }
@@ -52,13 +65,13 @@ pub struct sdshdr32 {
     len: u32, // 4
     alloc: u32, // 4
     flags: u8, // 4
-    buf: Vec<u8>,
+    buf: *mut u8,
 }
 
 impl sdshdr32 {
     pub fn new(len: u32, alloc: u32, init: &str) -> sdshdr32 {
-        let mut buf: Vec<u8> = Vec::with_capacity(alloc as usize);
-        buf.starts_with(init.as_bytes());
+        let mut buf = alloc_buf(alloc as usize);
+        ptr_copy(init, buf, len as usize);
         sdshdr32{ len, alloc, flags: SDS_TYPE_32, buf }
     }
 }
@@ -70,13 +83,13 @@ pub struct sdshdr64 {
     len: u64, // 8
     alloc: u64, // 8
     flags: u8, // 4
-    buf: Vec<u8>,
+    buf: *mut u8,
 }
 
 impl sdshdr64 {
     pub fn new(len: u64, alloc: u64, init: &str) -> sdshdr64 {
-        let mut buf: Vec<u8> = Vec::with_capacity(alloc as usize);
-        buf.starts_with(init.as_bytes());
+        let mut buf = alloc_buf(alloc as usize);
+        ptr_copy(init, buf, len as usize);
         sdshdr64{ len, alloc, flags: SDS_TYPE_64, buf }
     }
 }
