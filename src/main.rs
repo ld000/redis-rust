@@ -1,6 +1,5 @@
 use core::mem;
-use crate::sds::sdshdr8;
-use std::ptr::slice_from_raw_parts;
+use crate::sds::SdsHdr8;
 
 mod sds;
 
@@ -9,8 +8,8 @@ fn main() {
 
     println!("{}", mem::size_of_val(&sds));
 
-    let a = sdshdr8::new(5, 10, "啊aa");
-    println!("{}", "啊".len());
+    let a = SdsHdr8::new(5, 10, "啊aa");
+    println!("{}", sds.print());
     println!("{}", mem::size_of_val(&a));
     unsafe {
         println!("{:?}", std::str::from_utf8_unchecked(std::slice::from_raw_parts(a.buf, a.len as usize)));
